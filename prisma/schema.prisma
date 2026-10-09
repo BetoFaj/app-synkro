@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL") 
+}
+
+// 1. Provincias (Córdoba, Buenos Aires, Entre Rios, Tucumán, Catamarca, Santa Fe, Santiago del Estero, Salta, Jujuy, La Rioja, San Juan )
+model Province {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  stores    Store[]  
+  createdAt DateTime @default(now())
+}
+
+// 2. Tiendas (Soporta miles de sucursales)
+model Store {
+  id          String   @id @default(uuid())
+  storeNumber String   
+  provinceId  String
+  province    Province @relation(fields: [provinceId], references: [id])
+  surveys     Survey[] 
+  createdAt   DateTime @default(now())
+}
+
+// 3. Relevamientos 
+model Survey {
+  id                  String   @id @default(uuid())
+  storeId             String   // <-- Se eliminó el @unique para permitir historial de inspecciones mensuales
+  store               Store    @relation(fields: [storeId], references: [id])
+  
+  // --- PARTE ELÉCTRICA ---
+  trafoObs            String?  
+  tablerosObs         String?  
+  salaFrioElecObs     String?  
+  
+  // --- PARTE DE FRÍO ---
+  equiposCentralesObs String?  
+  
+  images              Image[]  
+  updatedAt           DateTime @updatedAt 
+  createdAt           DateTime @default(now())
+}
+
+// 4. Imágenes
+model Image {
+  id          String   @id @default(uuid())
+  url         String   
+  title       String?  
+  description String?  
+  category    String   
+  
+  surveyId    String
+  survey      Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+}
